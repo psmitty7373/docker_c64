@@ -1,43 +1,24 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html style="pointer-events: none;">
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Commodore 64 is best 64</title>
 <style type="text/css">
 body {
-  font-family: Courier;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 0 1em;
-}
-
-label {
-  display: block;
-  margin-top: 1em;
-}
-
-label > input {
-  margin-left: 1em;
-}
-
-.grid {
-  margin-top: 1em;
-  display: grid;
-  grid-template-rows: 100%;
-  grid-template-columns: 50% 50%;
-}
-
-.grid video {
-  width: 100%;
-  margin: auto 0;
-}
-
-.grid canvas {
-  margin: auto auto;
-  max-width: 100%;
+    overflow: hidden;
+    background-color: #4b4c55;
 }
 </style>
-<meta charset="utf-8">
-<title>node-webrtc Example</title>
-<body>
-<h1>node-webrtc examples</h1>
+</head>
 
-<script src="blah.js"></script>
+<body onload="connect(); pageReady();">
+<div id="container">
+    <input type="button" id="start" onclick="startAud()" value="Unmute" style="position: absolute; left: 10px; top: 10px; cursor: pointer; pointer-events: all"></input>
+    <div id="monitor" style="width:719px; height:544px; position: absolute; z-index: -1; left: 322px; top: 172px;"></div>
+    <div id="monitor-frame" style="background-image: url('c64.png'); background-repeat: no-repeat; background-size: cover; width: 1700px; height: 1300px"></div>
+</div>
+</body>
+<script type="text/javascript" src="webrtc.js"></script>
+<script type="text/javascript" src="broadway.js"></script>
+</html>

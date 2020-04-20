@@ -10,6 +10,7 @@ const wrtc = require('wrtc');
 const ws = new wss.Server({server: http});
 const uuidv4 = require('uuid/v4');
 const RTCAudioSourceSineWave = require('./lib.js');
+let connected = false;
 
 var peerConnectionConfig = {
 	sdpSemantics: 'unified-plan',
@@ -19,7 +20,6 @@ var peerConnectionConfig = {
 };
 
 function gotRemoteStream(e) {
-	console.log('gots', e);
 }
 
 function gotIceCandidate(e, s) {
@@ -27,15 +27,12 @@ function gotIceCandidate(e, s) {
 }
 
 function errorHandler(e) {
-	console.log('err', e);
 }
 
 function iceStateChange(e) {
-	console.log(e);
 }
 
 function createdDescription(s, desc) {
-	console.log('desc', desc);
 	s.peerConnection.setLocalDescription(new wrtc.RTCSessionDescription(desc)).then(function() {
 		s.uuid == uuidv4();
 		s.send(JSON.stringify({ 'sdp': s.peerConnection.localDescription, 'uuid': s.uuid }));
@@ -44,22 +41,32 @@ function createdDescription(s, desc) {
 
 ws.on('connection', function(s) {
     s.peerConnection = null;
-	console.log('connect');
+    s.source = null;
+    s.rtc = false;
 
-	s.peerConnection = new wrtc.RTCPeerConnection(peerConnectionConfig);
-	s.peerConnection.addEventListener('icecandidate', event => gotIceCandidate(event, s));
-	s.peerConnection.addEventListener('iceconnectionstatechange', iceStateChange);
-
-	const source = new RTCAudioSourceSineWave();
-    const track = source.createTrack();
-
-    s.peerConnection.addTrack(track);
-    s.peerConnection.createOffer().then(desc => createdDescription(s, desc)).catch(errorHandler);
+    if (connected) {
+        s.close();
+        return;
+    }
 
 	s.on('message', function(message) {
         var signal = JSON.parse(message);
 
-		if(signal.sdp) {
+        if (signal.rtc) {
+            connected = true;
+
+            s.rtc = true;
+            s.peerConnection = new wrtc.RTCPeerConnection(peerConnectionConfig);
+            s.peerConnection.addEventListener('icecandidate', event => gotIceCandidate(event, s));
+            s.peerConnection.addEventListener('iceconnectionstatechange', iceStateChange);
+
+            s.source = new RTCAudioSourceSineWave();
+            s.track = s.source.createTrack();
+
+            s.peerConnection.addTrack(s.track);
+            s.peerConnection.createOffer().then(desc => createdDescription(s, desc)).catch(errorHandler);
+
+        } else if (signal.sdp) {
 			s.peerConnection.setRemoteDescription(new wrtc.RTCSessionDescription(signal.sdp)).then(function() {
 
 			// Only create answers in response to offers
@@ -71,6 +78,13 @@ ws.on('connection', function(s) {
 			s.peerConnection.addIceCandidate(new wrtc.RTCIceCandidate(signal.ice)).catch(errorHandler);
 		}
 	});
+
+    s.on('close', function(e) {
+        if (s.rtc) {
+            s.source.close();
+            connected = false;
+        }
+    });
 });
 
 ws.broadcast = function(data) {
@@ -80,119 +94,6 @@ ws.broadcast = function(data) {
 			}
 	  });
 };
-
-/*
-const WebRtcConnectionManager = require('./lib/server/connections/webrtcconnectionmanager');
-
-
-app.use(bodyParser.json());
-
-function beforeOffer(peerConnection) {
-    const source = new RTCAudioSourceSineWave();
-    const track = source.createTrack();
-    peerConnection.addTrack(track);
-
-    function onMessage({
-        data
-    }) {
-        console.log(data);
-    }
-
-    const {
-        close
-    } = peerConnection;
-    peerConnection.close = function() {
-        track.stop();
-        source.close();
-        return close.apply(this, arguments);
-    };
-}
-
-const connectionManager = WebRtcConnectionManager.create({
-    beforeOffer
-});
-
-app.get('/connections', (req, res) => {
-    res.send(connectionManager.getConnections());
-});
-
-app.post('/connections', async (req, res) => {
-    try {
-        const connection = await connectionManager.createConnection();
-        res.send(connection);
-    } catch (error) {
-        console.error(error);
-        res.sendStatus(500);
-    }
-});
-
-app.delete('/connections/:id', (req, res) => {
-    const {
-        id
-    } = req.params;
-    const connection = connectionManager.getConnection(id);
-    if (!connection) {
-        res.sendStatus(404);
-        return;
-    }
-    connection.close();
-    res.send(connection);
-});
-
-app.get('/connections/:id', (req, res) => {
-    const {
-        id
-    } = req.params;
-    const connection = connectionManager.getConnection(id);
-    if (!connection) {
-        res.sendStatus(404);
-        return;
-    }
-    res.send(connection);
-});
-
-app.get('/connections/:id/local-description', (req, res) => {
-    const {
-        id
-    } = req.params;
-    const connection = connectionManager.getConnection(id);
-    if (!connection) {
-        res.sendStatus(404);
-        return;
-    }
-    res.send(connection.toJSON().localDescription);
-});
-
-app.get('/connections/:id/remote-description', (req, res) => {
-    const {
-        id
-    } = req.params;
-    const connection = connectionManager.getConnection(id);
-    if (!connection) {
-        res.sendStatus(404);
-        return;
-    }
-    res.send(connection.toJSON().remoteDescription);
-});
-
-app.post('/connections/:id/remote-description', async (req, res) => {
-    const {
-        id
-    } = req.params;
-    const connection = connectionManager.getConnection(id);
-    if (!connection) {
-        res.sendStatus(404);
-        return;
-    }
-    try {
-        await connection.applyAnswer(req.body);
-        res.send(connection.toJSON().remoteDescription);
-    } catch (error) {
-        res.sendStatus(400);
-    }
-});
-app.use('/blah.js', browserify('public/client.js'));
-*/
 
 app.use(express.static('public'));
 

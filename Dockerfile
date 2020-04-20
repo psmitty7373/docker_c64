@@ -14,6 +14,7 @@ COPY demo.d64 /tmp
 
 RUN cd /tmp
 RUN tar xzvf /tmp/vice.tar.gz -C /
+RUN tar xzvf /tmp/server.tar.gz -C /opt
 
 ENV GDK_BACKEND broadway
 ENV BROADWAY_DISPLAY :5

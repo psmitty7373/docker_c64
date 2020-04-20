@@ -38,6 +38,7 @@ class AlsaSource {
 
 
     this.close = () => {
+        captureInstance.close();
     };
 
     this.createTrack = () => {
