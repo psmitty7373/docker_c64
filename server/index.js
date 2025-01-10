@@ -6,12 +6,13 @@ const express = require('express');
 const app = express();
 const wss = require('ws');
 const http = require('http').Server(app);
-const wrtc = require('wrtc');
-const ws = new wss.Server({server: http});
-const uuidv4 = require('uuid/v4');
-const RTCAudioSourceSineWave = require('./lib.js');
+//const wrtc = require('wrtc');
+//const ws = new wss.Server({server: http});
+//const uuidv4 = require('uuid/v4');
+//const RTCAudioSourceSineWave = require('./lib.js');
 let connected = false;
 
+/*
 var peerConnectionConfig = {
 	sdpSemantics: 'unified-plan',
 	iceServers: [
@@ -94,7 +95,7 @@ ws.broadcast = function(data) {
 			}
 	  });
 };
-
+*/
 app.use(express.static('public'));
 
 const server = http.listen(3000, () => {
